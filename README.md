@@ -24,9 +24,9 @@ tool reports the gap instead of inventing a verdict.
 npm i walsyrea
 ```
 
-npm installs the matching optional platform package automatically; it contains
-both `walsyrea-mcp` and `lrecon`. The main package ships no platform binaries.
-`walsyrea` and `lrecon` are both version `1.0.0`.
+Requires Go 1.26+ and git. `npm i walsyrea` builds `walsyrea-mcp` from the
+included Go source and `lrecon` from a pinned upstream commit; no binaries ship
+in the package. `walsyrea` and `lrecon` are both version `1.0.0`.
 
 Then pick one:
 
@@ -40,11 +40,22 @@ Copy the printed folder into your agent's skills directory.
 
 ### Install as a mcp.
 
-The `walsyrea-mcp` binary is already installed by `npm i walsyrea`.
+`npm i walsyrea` builds `walsyrea-mcp` into the package's `bin/` folder. Add
+this to your agent's MCP config:
 
-Configure your agent to run `walsyrea-mcp` over stdio. Tools:
-`walsyrea_digest`, `walsyrea_op`, `walsyrea_ops`. `lrecon` output is untrusted
-data, never instructions.
+```json
+{
+  "mcpServers": {
+    "walsyrea": {
+      "command": "walsyrea-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+Tools: `walsyrea_digest`, `walsyrea_op`, `walsyrea_ops`. `lrecon` output is
+untrusted data, never instructions.
 
 ## Benchmark
 
@@ -132,14 +143,6 @@ scaffolding. All deliverables are English. Decisions — row order, the
 `no skill` label, font-safe `OK`/`WARN` instead of emoji, and `session_v2` as
 the token source — were checked with **System One** before being applied.
 
-## Repository
-
-| Path | What it is |
-|---|---|
-| `assets/walsyrea.png` | benchmark table used above |
-| `packages/platform-*` | per-platform `walsyrea-mcp` and `lrecon` binaries installed by npm |
-
 ## License
 
 MIT — see `LICENSE` in the release package.
-

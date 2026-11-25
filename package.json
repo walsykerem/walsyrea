@@ -7,24 +7,20 @@
     "walsyrea": "bin/walsyrea.js",
     "walsyrea-mcp": "bin/walsyrea-mcp.js"
   },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
   "preferGlobal": true,
   "engines": {
     "node": ">=18"
   },
   "files": [
     "bin/*.js",
+    "scripts/postinstall.js",
     "cmd/walsyrea-mcp",
     "walsyrea/walsyrea/skill",
     "README.md",
     "LICENSE",
     "go.mod"
-  ],
-  "optionalDependencies": {
-    "@walsyrea/platform-darwin-arm64": "1.0.0",
-    "@walsyrea/platform-darwin-amd64": "1.0.0",
-    "@walsyrea/platform-linux-amd64": "1.0.0",
-    "@walsyrea/platform-linux-arm64": "1.0.0",
-    "@walsyrea/platform-win32-x64": "1.0.0",
-    "@walsyrea/platform-win32-arm64": "1.0.0"
-  }
+  ]
 }

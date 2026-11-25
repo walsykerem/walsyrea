@@ -322,6 +322,9 @@ func runLrecon(ctx context.Context, env []string, args ...string) (string, error
 	return out, nil
 }
 
+// executable is overridable in tests.
+var executable = os.Executable
+
 func lreconPath() (string, error) {
 	if path := strings.TrimSpace(os.Getenv("LRECON")); path != "" {
 		return path, nil
@@ -329,82 +332,16 @@ func lreconPath() (string, error) {
 	if path, err := exec.LookPath("lrecon"); err == nil {
 		return path, nil
 	}
-	if path := platformLrecon(); path != "" {
-		if _, err := os.Stat(path); err == nil {
-			return path, nil
+	exe, err := executable()
+	if err == nil {
+		name := "lrecon"
+		if runtime.GOOS == "windows" {
+			name += ".exe"
 		}
-	}
-	path := bundledLrecon()
-	if path != "" {
+		path := filepath.Join(filepath.Dir(exe), name)
 		if _, err := os.Stat(path); err == nil {
 			return path, nil
 		}
 	}
 	return "", errors.New("lrecon not found: set LRECON to the lrecon binary path")
-}
-
-// platformLrecon finds lrecon beside this binary in an installed platform package.
-func platformLrecon() string {
-	dir := os.Getenv("WALSYREA_PLATFORM_DIR")
-	if dir == "" {
-		exe, err := os.Executable()
-		if err != nil {
-			return ""
-		}
-		dir = filepath.Dir(exe)
-	}
-	name := platformLreconName(runtime.GOOS, runtime.GOARCH)
-	if name == "" {
-		return ""
-	}
-	return filepath.Join(dir, name)
-}
-
-func platformLreconName(goos, goarch string) string {
-	switch goos {
-	case "windows":
-		if goarch == "arm64" {
-			return "lrecon-arm64.exe"
-		}
-		return "lrecon.exe"
-	case "darwin", "linux":
-		if goarch == "arm64" {
-			return "lrecon-arm64"
-		}
-		return "lrecon"
-	}
-	return ""
-}
-
-func bundledLrecon() string {
-	return bundledLreconFor(runtime.GOOS, runtime.GOARCH)
-}
-
-func bundledLreconFor(goos, goarch string) string {
-	var dir, name string
-	switch goos {
-	case "darwin":
-		dir = "macos"
-		if goarch == "arm64" {
-			name = "lrecon"
-		} else {
-			name = "lrecon-amd64"
-		}
-	case "linux":
-		dir = "linux"
-		if goarch == "arm64" {
-			name = "lrecon-arm64"
-		} else {
-			name = "lrecon"
-		}
-	case "windows":
-		dir = "windows"
-		name = "lrecon.exe"
-		if goarch == "arm64" {
-			name = "lrecon-arm64.exe"
-		}
-	default:
-		return ""
-	}
-	return filepath.Join("walsyrea", "walsyrea", dir, name)
 }

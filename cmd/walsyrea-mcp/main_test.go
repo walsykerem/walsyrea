@@ -50,121 +50,50 @@ func TestRunLreconUsesLRECON(t *testing.T) {
 	}
 }
 
-func TestBundledLreconForPlatforms(t *testing.T) {
-	cases := []struct {
-		goos, goarch, want string
-	}{
-		{"darwin", "arm64", "macos/lrecon"},
-		{"darwin", "amd64", "macos/lrecon-amd64"},
-		{"linux", "amd64", "linux/lrecon"},
-		{"linux", "arm64", "linux/lrecon-arm64"},
-		{"windows", "amd64", "windows/lrecon.exe"},
-		{"windows", "arm64", "windows/lrecon-arm64.exe"},
-		{"freebsd", "amd64", ""},
-	}
-	for _, tc := range cases {
-		t.Run(tc.goos+"_"+tc.goarch, func(t *testing.T) {
-			want := ""
-			if tc.want != "" {
-				want = filepath.Join("walsyrea", "walsyrea", tc.want)
-			}
-			if got := bundledLreconFor(tc.goos, tc.goarch); got != want {
-				t.Fatalf("bundledLreconFor(%q,%q) = %q, want %q", tc.goos, tc.goarch, got, want)
-			}
-		})
-	}
-}
-
-func TestPlatformLreconName(t *testing.T) {
-	cases := []struct {
-		goos, goarch, want string
-	}{
-		{"darwin", "arm64", "lrecon-arm64"},
-		{"darwin", "amd64", "lrecon"},
-		{"linux", "amd64", "lrecon"},
-		{"linux", "arm64", "lrecon-arm64"},
-		{"windows", "amd64", "lrecon.exe"},
-		{"windows", "arm64", "lrecon-arm64.exe"},
-		{"freebsd", "amd64", ""},
-	}
-	for _, tc := range cases {
-		if got := platformLreconName(tc.goos, tc.goarch); got != tc.want {
-			t.Errorf("platformLreconName(%q,%q) = %q, want %q", tc.goos, tc.goarch, got, tc.want)
-		}
-	}
-}
-
 func TestLreconPathResolutionOrder(t *testing.T) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
 	root := t.TempDir()
-	if err := os.Chdir(root); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.Chdir(cwd); err != nil {
-			t.Error(err)
-		}
-	})
-
-	envDir := filepath.Join(root, "env")
-	pathDir := filepath.Join(root, "path")
-	platformDir := filepath.Join(root, "platform")
-	emptyDir := filepath.Join(root, "empty")
-	for _, dir := range []string{envDir, pathDir, platformDir, emptyDir} {
+	mkDir := func(name string) string {
+		t.Helper()
+		dir := filepath.Join(root, name)
 		if err := os.MkdirAll(dir, 0o700); err != nil {
 			t.Fatal(err)
 		}
+		return dir
 	}
 	writeStub := func(dir, name string) string {
 		t.Helper()
-		if err := os.MkdirAll(dir, 0o700); err != nil {
-			t.Fatal(err)
-		}
 		path := filepath.Join(dir, name)
 		if err := os.WriteFile(path, nil, 0o700); err != nil {
 			t.Fatal(err)
 		}
 		return path
 	}
-
-	exeName := "lrecon"
+	envDir, pathDir, exeDir, emptyDir := mkDir("env"), mkDir("path"), mkDir("exe"), mkDir("empty")
+	name := "lrecon"
 	if runtime.GOOS == "windows" {
-		exeName = "lrecon.exe"
+		name = "lrecon.exe"
 	}
-	envPath := writeStub(envDir, exeName)
-	pathPath := writeStub(pathDir, exeName)
-	bundledPath := bundledLrecon()
+	envPath := writeStub(envDir, name)
+	pathPath := writeStub(pathDir, name)
+	besidePath := writeStub(exeDir, name)
 
-	platformPath := ""
-	if name := platformLreconName(runtime.GOOS, runtime.GOARCH); name != "" {
-		platformPath = writeStub(platformDir, name)
-	}
+	realExecutable := executable
+	t.Cleanup(func() { executable = realExecutable })
 
 	cases := []struct {
-		name, env, dirPath, platformDir, want string
-		bundled, wantErr                      bool
+		name, env, pathEnv, exeDir, want string
+		wantErr                          bool
 	}{
-		{"env wins", envPath, pathDir, platformDir, envPath, true, false},
-		{"PATH wins", "", pathDir, platformDir, pathPath, true, false},
-		{"platform before bundled", "", "", platformDir, platformPath, true, false},
-		{"bundled last", "", "", emptyDir, bundledPath, true, false},
-		{"nothing found", "", "", emptyDir, "", false, true},
+		{"env wins", envPath, pathDir, emptyDir, envPath, false},
+		{"PATH wins", "", pathDir, emptyDir, pathPath, false},
+		{"beside executable", "", "", exeDir, besidePath, false},
+		{"nothing found", "", "", emptyDir, "", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.wantErr == false && tc.want == "" {
-				t.Skip("unsupported platform")
-			}
-			_ = os.Remove(bundledPath)
-			if tc.bundled {
-				writeStub(filepath.Dir(bundledPath), filepath.Base(bundledPath))
-			}
+			executable = func() (string, error) { return filepath.Join(tc.exeDir, "walsyrea-mcp"), nil }
 			t.Setenv("LRECON", tc.env)
-			t.Setenv("PATH", tc.dirPath)
-			t.Setenv("WALSYREA_PLATFORM_DIR", tc.platformDir)
+			t.Setenv("PATH", tc.pathEnv)
 			got, err := lreconPath()
 			if tc.wantErr {
 				if err == nil {
