@@ -3,3 +3,7 @@
 .env.*
 env/
 node_modules/
+bin/lrecon
+bin/lrecon.exe
+bin/walsyrea-mcp
+bin/walsyrea-mcp.exe

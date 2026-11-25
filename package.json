@@ -1,0 +1,26 @@
+{
+  "name": "walsyrea",
+  "version": "1.0.0",
+  "description": "Read-only reverse-engineering skill and MCP server backed by lrecon",
+  "license": "MIT",
+  "bin": {
+    "walsyrea": "bin/walsyrea.js",
+    "walsyrea-mcp": "bin/walsyrea-mcp.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "preferGlobal": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin/*.js",
+    "scripts/postinstall.js",
+    "cmd/walsyrea-mcp",
+    "walsyrea/walsyrea/skill",
+    "README.md",
+    "LICENSE",
+    "go.mod"
+  ]
+}
