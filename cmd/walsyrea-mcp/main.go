@@ -20,7 +20,7 @@ import (
 
 const (
 	serverName    = "walsyrea-mcp"
-	serverVersion = "0.1.0"
+	serverVersion = "1.0.0"
 )
 
 type rpcRequest struct {
@@ -329,11 +329,51 @@ func lreconPath() (string, error) {
 	if path, err := exec.LookPath("lrecon"); err == nil {
 		return path, nil
 	}
+	if path := platformLrecon(); path != "" {
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
+	}
 	path := bundledLrecon()
-	if _, err := os.Stat(path); err == nil {
-		return path, nil
+	if path != "" {
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
 	}
 	return "", errors.New("lrecon not found: set LRECON to the lrecon binary path")
+}
+
+// platformLrecon finds lrecon beside this binary in an installed platform package.
+func platformLrecon() string {
+	dir := os.Getenv("WALSYREA_PLATFORM_DIR")
+	if dir == "" {
+		exe, err := os.Executable()
+		if err != nil {
+			return ""
+		}
+		dir = filepath.Dir(exe)
+	}
+	name := platformLreconName(runtime.GOOS, runtime.GOARCH)
+	if name == "" {
+		return ""
+	}
+	return filepath.Join(dir, name)
+}
+
+func platformLreconName(goos, goarch string) string {
+	switch goos {
+	case "windows":
+		if goarch == "arm64" {
+			return "lrecon-arm64.exe"
+		}
+		return "lrecon.exe"
+	case "darwin", "linux":
+		if goarch == "arm64" {
+			return "lrecon-arm64"
+		}
+		return "lrecon"
+	}
+	return ""
 }
 
 func bundledLrecon() string {

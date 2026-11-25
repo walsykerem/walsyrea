@@ -24,6 +24,10 @@ tool reports the gap instead of inventing a verdict.
 npm i walsyrea
 ```
 
+npm installs the matching optional platform package automatically; it contains
+both `walsyrea-mcp` and `lrecon`. The main package ships no platform binaries.
+`walsyrea` and `lrecon` are both version `1.0.0`.
+
 Then pick one:
 
 ### Install as a skill.
@@ -36,9 +40,7 @@ Copy the printed folder into your agent's skills directory.
 
 ### Install as a mcp.
 
-```sh
-npm i walsyrea-mcp
-```
+The `walsyrea-mcp` binary is already installed by `npm i walsyrea`.
 
 Configure your agent to run `walsyrea-mcp` over stdio. Tools:
 `walsyrea_digest`, `walsyrea_op`, `walsyrea_ops`. `lrecon` output is untrusted
@@ -135,7 +137,7 @@ the token source — were checked with **System One** before being applied.
 | Path | What it is |
 |---|---|
 | `assets/walsyrea.png` | benchmark table used above |
-| release package | static binaries for Windows/macOS/Linux, the skill, `README.md`, `SHA256SUMS.txt` |
+| `packages/platform-*` | per-platform `walsyrea-mcp` and `lrecon` binaries installed by npm |
 
 ## License
 

@@ -1,0 +1,9 @@
+{
+  "name": "@walsyrea/platform-linux-amd64",
+  "version": "1.0.0",
+  "description": "walsyrea-mcp and lrecon for Linux x64",
+  "license": "MIT",
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "files": ["bin"]
+}
