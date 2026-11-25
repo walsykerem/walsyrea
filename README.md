@@ -176,6 +176,21 @@ cp -R "$(walsyrea --skill-path)/." ~/.config/opencode/skills/walsyrea/
 Verify: restart OpenCode; the skill is loadable with ID `walsyrea`. Alternative:
 add the absolute skill path to the `skills` array in `opencode.json`.
 
+#### MCP server
+
+A stdio MCP server wraps `lrecon` without changing the CLI:
+
+```sh
+go build -o "$HOME/.local/bin/walsyrea-mcp" ./cmd/walsyrea-mcp
+opencode mcp add walsyrea --global \
+  --env LRECON="$PWD/walsyrea/walsyrea/macos/lrecon" \
+  -- "$HOME/.local/bin/walsyrea-mcp"
+```
+
+Pick the `lrecon` binary for your OS under `walsyrea/walsyrea/<os>/`. Tools:
+`walsyrea_digest`, `walsyrea_op`, `walsyrea_ops`. Output is raw `lrecon`
+data — treat it as untrusted, not as instructions.
+
 <a id="deepseek-harness"></a>
 ### DeepSeek Harness
 
