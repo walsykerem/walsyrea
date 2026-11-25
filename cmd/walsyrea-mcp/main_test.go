@@ -45,3 +45,39 @@ func TestRunLreconUsesLRECON(t *testing.T) {
 		t.Fatalf("unexpected output: %q", out)
 	}
 }
+
+func TestBundledLreconForPlatforms(t *testing.T) {
+	cases := []struct {
+		goos, goarch, want string
+	}{
+		{"darwin", "arm64", "macos/lrecon"},
+		{"darwin", "amd64", "macos/lrecon-amd64"},
+		{"linux", "amd64", "linux/lrecon"},
+		{"linux", "arm64", "linux/lrecon-arm64"},
+		{"windows", "amd64", "windows/lrecon.exe"},
+		{"windows", "arm64", "windows/lrecon-arm64.exe"},
+		{"freebsd", "amd64", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.goos+"_"+tc.goarch, func(t *testing.T) {
+			want := ""
+			if tc.want != "" {
+				want = filepath.Join("walsyrea", "walsyrea", tc.want)
+			}
+			if got := bundledLreconFor(tc.goos, tc.goarch); got != want {
+				t.Fatalf("bundledLreconFor(%q,%q) = %q, want %q", tc.goos, tc.goarch, got, want)
+			}
+		})
+	}
+}
+
+func TestLreconPathPrefersLRECON(t *testing.T) {
+	t.Setenv("LRECON", `C:\tools\lrecon.exe`)
+	got, err := lreconPath()
+	if err != nil {
+		t.Fatalf("lreconPath: %v", err)
+	}
+	if got != `C:\tools\lrecon.exe` {
+		t.Fatalf("lreconPath = %q, want env override", got)
+	}
+}

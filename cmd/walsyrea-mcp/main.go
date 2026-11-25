@@ -337,18 +337,22 @@ func lreconPath() (string, error) {
 }
 
 func bundledLrecon() string {
+	return bundledLreconFor(runtime.GOOS, runtime.GOARCH)
+}
+
+func bundledLreconFor(goos, goarch string) string {
 	var dir, name string
-	switch runtime.GOOS {
+	switch goos {
 	case "darwin":
 		dir = "macos"
-		if runtime.GOARCH == "arm64" {
+		if goarch == "arm64" {
 			name = "lrecon"
 		} else {
 			name = "lrecon-amd64"
 		}
 	case "linux":
 		dir = "linux"
-		if runtime.GOARCH == "arm64" {
+		if goarch == "arm64" {
 			name = "lrecon-arm64"
 		} else {
 			name = "lrecon"
@@ -356,7 +360,7 @@ func bundledLrecon() string {
 	case "windows":
 		dir = "windows"
 		name = "lrecon.exe"
-		if runtime.GOARCH == "arm64" {
+		if goarch == "arm64" {
 			name = "lrecon-arm64.exe"
 		}
 	default:
