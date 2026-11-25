@@ -3,7 +3,10 @@
 .env.*
 env/
 node_modules/
+cache/*
+!cache/.gitkeep
 bin/lrecon
 bin/lrecon.exe
 bin/walsyrea-mcp
 bin/walsyrea-mcp.exe
+/walsyrea-mcp

@@ -21,7 +21,11 @@ import (
 const (
 	serverName    = "walsyrea-mcp"
 	serverVersion = "1.0.0"
+	cacheDirName  = "cache"
+	cacheLogName  = "walsyrea-mcp.log"
 )
+
+var cacheLog *os.File
 
 type rpcRequest struct {
 	JSONRPC string          `json:"jsonrpc"`
@@ -64,6 +68,16 @@ type toolResult struct {
 }
 
 func main() {
+	logFile, err := initCache()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, serverName+": cache:", err)
+	} else {
+		cacheLog = logFile
+		defer logFile.Close()
+		logf("started")
+		defer logf("stopped")
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	encoder := json.NewEncoder(os.Stdout)
 	for {
@@ -73,11 +87,47 @@ func main() {
 		}
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
-				fmt.Fprintln(os.Stderr, serverName+": stdin:", err)
+				msg := serverName + ": stdin: " + err.Error()
+				fmt.Fprintln(os.Stderr, msg)
+				logf("%s", msg)
 			}
 			return
 		}
 	}
+}
+
+func initCache() (*os.File, error) {
+	dir := os.Getenv("WALSYREA_CACHE_DIR")
+	if dir == "" {
+		exe, err := executable()
+		if err != nil {
+			return nil, err
+		}
+		dir = filepath.Join(filepath.Dir(filepath.Dir(exe)), cacheDirName)
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return nil, err
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		if entry.Name() == ".gitkeep" {
+			continue
+		}
+		if err := os.RemoveAll(filepath.Join(dir, entry.Name())); err != nil {
+			return nil, err
+		}
+	}
+	return os.OpenFile(filepath.Join(dir, cacheLogName), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+}
+
+func logf(format string, args ...any) {
+	if cacheLog == nil {
+		return
+	}
+	fmt.Fprintf(cacheLog, "%s %s\n", time.Now().Format(time.RFC3339), fmt.Sprintf(format, args...))
 }
 
 func handleLine(ctx context.Context, encoder *json.Encoder, line []byte) {
@@ -317,6 +367,7 @@ func runLrecon(ctx context.Context, env []string, args ...string) (string, error
 		out += stderr.String()
 	}
 	if runErr != nil {
+		logf("lrecon failed: %v", runErr)
 		return out, fmt.Errorf("lrecon: %w", runErr)
 	}
 	return out, nil

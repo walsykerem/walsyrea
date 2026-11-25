@@ -121,3 +121,38 @@ func TestLreconPathPrefersLRECON(t *testing.T) {
 		t.Fatalf("lreconPath = %q, want env override", got)
 	}
 }
+
+func TestInitCacheClearsOnStart(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("WALSYREA_CACHE_DIR", dir)
+	if err := os.WriteFile(filepath.Join(dir, "old.log"), []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(dir, "stale"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".gitkeep"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	logFile, err := initCache()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer logFile.Close()
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{".gitkeep": true, cacheLogName: true}
+	for _, entry := range entries {
+		if !want[entry.Name()] {
+			t.Fatalf("unexpected cache entry %q", entry.Name())
+		}
+		delete(want, entry.Name())
+	}
+	if len(want) != 0 {
+		t.Fatalf("missing cache entries: %v", want)
+	}
+}
